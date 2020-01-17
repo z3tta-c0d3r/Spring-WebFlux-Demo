@@ -6,6 +6,7 @@
 </head>
 <body>
 <h1 th:text="${title}"></h1>
+<a th:href="@{/form}">create new product</a>
 <table>
     <thead>
     <tr>
@@ -13,6 +14,7 @@
         <th>name</th>
         <th>price</th>
         <th>date</th>
+        <th>editar</th>
     </tr>
     </thead>
     <tbody>
@@ -21,6 +23,7 @@
         <td th:text="${prod.name}"></td>
         <td th:text="${prod.price}"></td>
         <td th:text="${prod.createAt}"></td>
+        <td><a th:href="@{/form/} + ${prod.id}">edit</a></td>
     </tr>
     </tbody>
 </table>
