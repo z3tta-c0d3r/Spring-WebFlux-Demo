@@ -1,4 +1,4 @@
-package com.example.SpringDemo4.documents;
+package com.example.SpringDemo4.models.documents;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

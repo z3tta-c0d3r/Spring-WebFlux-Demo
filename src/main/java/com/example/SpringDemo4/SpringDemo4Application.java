@@ -1,7 +1,7 @@
 package com.example.SpringDemo4;
 
-import com.example.SpringDemo4.documents.Product;
-import com.example.SpringDemo4.models.ProductDao;
+import com.example.SpringDemo4.models.documents.Product;
+import com.example.SpringDemo4.models.dao.ProductDao;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;

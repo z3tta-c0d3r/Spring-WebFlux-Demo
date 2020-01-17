@@ -1,9 +1,9 @@
 package com.example.SpringDemo4.controllers;
 
-import com.example.SpringDemo4.documents.Product;
-import com.example.SpringDemo4.models.ProductDao;
+import com.example.SpringDemo4.models.documents.Product;
+import com.example.SpringDemo4.models.services.ProductService;
+import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -14,9 +14,10 @@ import java.time.Duration;
 
 @Controller
 @Slf4j
+@Data
 public class ProductController {
-    @Autowired
-    ProductDao productDao;
+
+    private final ProductService service;
 
     /**
      * List normal elements
@@ -26,10 +27,7 @@ public class ProductController {
     @GetMapping({"/list","/"})
     public String listProduct(Model model) {
         //Flux<Product> productFlux = productDao.findAll();
-        Flux<Product> productFlux = productDao.findAll().map(product -> {
-            product.setName(product.getName().toUpperCase());
-            return product;
-        });
+        Flux<Product> productFlux = service.findAllWithNameUpperCase();
 
         productFlux.subscribe(prod -> log.info(prod.getName()));
 
@@ -45,10 +43,7 @@ public class ProductController {
      */
     @GetMapping({"/listdatadriver"})
     public String listDataDriver(Model model) {
-        Flux<Product> productFlux = productDao.findAll().map(product -> {
-            product.setName(product.getName().toUpperCase());
-            return product;
-        }).delayElements(Duration.ofSeconds(1));
+        Flux<Product> productFlux = service.findAllWithNameUpperCase().delayElements(Duration.ofSeconds(1));
 
         productFlux.subscribe(prod -> log.info(prod.getName()));
 
@@ -64,10 +59,7 @@ public class ProductController {
      */
     @GetMapping({"/listfull"})
     public String listFull(Model model) {
-        Flux<Product> productFlux = productDao.findAll().map(product -> {
-            product.setName(product.getName().toUpperCase());
-            return product;
-        }).repeat(5000);
+        Flux<Product> productFlux = service.findAllWithNameUpperCaseRepeat();
 
         model.addAttribute("products", new ReactiveDataDriverContextVariable(productFlux, 2));
         model.addAttribute("title","List of Products");
@@ -81,10 +73,7 @@ public class ProductController {
      */
     @GetMapping({"/listchunked"})
     public String listChunked(Model model) {
-        Flux<Product> productFlux = productDao.findAll().map(product -> {
-            product.setName(product.getName().toUpperCase());
-            return product;
-        }).repeat(5000);
+        Flux<Product> productFlux = service.findAllWithNameUpperCaseRepeat();
 
         model.addAttribute("products", new ReactiveDataDriverContextVariable(productFlux, 2));
         model.addAttribute("title","List of Products");
