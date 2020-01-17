@@ -7,8 +7,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.thymeleaf.spring5.context.webflux.ReactiveDataDriverContextVariable;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 import java.time.Duration;
 
@@ -25,7 +27,7 @@ public class ProductController {
      * @return
      */
     @GetMapping({"/list","/"})
-    public String listProduct(Model model) {
+    public Mono<String> listProduct(Model model) {
         //Flux<Product> productFlux = productDao.findAll();
         Flux<Product> productFlux = service.findAllWithNameUpperCase();
 
@@ -33,7 +35,24 @@ public class ProductController {
 
         model.addAttribute("products",productFlux);
         model.addAttribute("title","List of Products");
-        return "list";
+        //return "list";
+        return Mono.just("list");
+    }
+
+    @GetMapping("/form")
+    public Mono<String> createProduct(Model model) {
+        model.addAttribute("product", new Product());
+        model.addAttribute("title", "Form of product");
+        return Mono.just("form");
+    }
+
+    @PostMapping("/form")
+    public Mono<String> saveProduct(Product product) {
+
+        return service.save(product).doOnNext(p -> {
+            log.info("Product save: " + product .getName() + " Id: " + product.getId());
+        }).thenReturn("redirect:/list");
+        //.then(Mono.just("redirect:/list"));
     }
 
     /**
