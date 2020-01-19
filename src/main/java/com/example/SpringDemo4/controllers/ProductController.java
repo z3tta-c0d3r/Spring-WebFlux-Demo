@@ -1,5 +1,6 @@
 package com.example.SpringDemo4.controllers;
 
+import com.example.SpringDemo4.models.documents.Category;
 import com.example.SpringDemo4.models.documents.Product;
 import com.example.SpringDemo4.models.services.ProductService;
 import lombok.Data;
@@ -24,6 +25,11 @@ import java.util.Date;
 public class ProductController {
 
     private final ProductService service;
+
+    @ModelAttribute("categories")
+    public Flux<Category> categories() {
+        return service.findAllCategories();
+    }
 
     /**
      * List normal elements
@@ -53,24 +59,41 @@ public class ProductController {
     }
 
     @PostMapping("/form")
-    public Mono<String> saveProduct(@Valid @ModelAttribute("product") Product product, BindingResult result, SessionStatus status, Model model) {
+    public Mono<String> saveProduct(@Valid Product product, BindingResult result, SessionStatus status, Model model) {
 
         if (result.hasErrors()) {
             model.addAttribute("title", "Errors of product");
             model.addAttribute("button","Save");
             return Mono.just("form");
         } else {
+            status.setComplete();
 
             if(product.getCreateAt() == null) {
                 product.setCreateAt(new Date());
             }
+            // Fase 2
+            //if(product.getCreateAt() == null) {
+            //    product.setCreateAt(new Date());
+            //}
 
-            status.setComplete();
-            return service.save(product).doOnNext(p -> {
-                log.info("Product save: " + product.getName() + " Id: " + product.getId());
+            Mono<Category> categoria = service.findByIdCategories(product.getCategory().getId());
+
+            return categoria.flatMap(c -> {
+               product.setCategory(c);
+               return service.save(product);
+            }).doOnNext(p -> {
+                    log.info("Product save: " + product.getName() + " Id: " + product.getId());
             }).thenReturn("redirect:/list?success=save+product+with+success");
-            //.then(Mono.just("redirect:/list"));
         }
+
+            // Fase 2
+            //return service.save(product).doOnNext(p -> {
+            //    log.info("Product save: " + product.getName() + " Id: " + product.getId());
+            //}).thenReturn("redirect:/list?success=save+product+with+success");
+
+            // Fase 1
+            //.then(Mono.just("redirect:/list"));
+
     }
 
     @GetMapping("/form/{id}")

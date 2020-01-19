@@ -10,7 +10,8 @@
     <a th:href="@{/list}">back</a>
     <form th:action="@{/form}" method="post" th:object="${product}">
 
-        Without session of spring @SessionAttributes("product") // other case with return Mono directly form-v2
+        <!--// Without session of spring @SessionAttributes("product")
+        // other case with return Mono directly form-v2 -->
         <input th:if="${product.id != null}" type="hidden" th:field="*{id}" />
 
         <div><label for="name">Name</label>
@@ -23,6 +24,15 @@
         </div>
         <div><label for="createAt">Date</label>
             <div><input type="date" th:field="*{createAt}"></div>
+        </div>
+        <div><label for="category.id">Categories</label>
+            <div>
+                <select th:field="*{category.id}">
+                    <option value = "">-- Select --</option>
+                    <option th:each="category: ${categories}" th:value="${category.id}" th:text="${category.name}"></option>
+                </select>
+            </div>
+            <small th:if="${#fields.hasErrors('category.id')}" th:errors="*{category.name}"></small>
         </div>
         <div>
             <div><input type="submit" th:value="${button}"></div>
