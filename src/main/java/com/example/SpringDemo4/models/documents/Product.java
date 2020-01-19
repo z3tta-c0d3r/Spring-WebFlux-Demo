@@ -8,6 +8,8 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.format.annotation.DateTimeFormat;
 
+import javax.validation.constraints.NotEmpty;
+import javax.validation.constraints.NotNull;
 import java.util.Date;
 
 @Document(collection = "Products")
@@ -19,7 +21,11 @@ public class Product {
 
     @Id
     private String id;
+
+    @NotEmpty
     private String name;
+
+    @NotNull
     private Double price;
 
     @DateTimeFormat(pattern = "yyyy-MM-dd")
