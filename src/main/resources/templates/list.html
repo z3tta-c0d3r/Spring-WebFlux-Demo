@@ -23,10 +23,10 @@
     </thead>
     <tbody>
     <tr th:each="prod: ${products}">
-        <td th:text="${prod.id}"></td>
+        <td ><a th:href="@{/see/} + ${prod.id}" th:text="${#strings.abbreviate(prod.id,30)}"></a></td>
         <td th:text="${prod.name}"></td>
-        <td th:text="${prod.price}"></td>
-        <td th:text="${prod.createAt}"></td>
+        <td th:text="${#numbers.formatCurrency(prod.price)}"></td>
+        <td th:text="${#calendars.format(prod.createAt, 'dd/MM/yyyy')}"></td>
         <td th:text="${prod.category.name}"></td>
         <!-- <td><a th:href="@{/form-v2/} + ${prod.id}">edit</a></td> -->
         <td><a th:href="@{/form/} + ${prod.id}">edit</a></td>

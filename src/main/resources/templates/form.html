@@ -17,7 +17,7 @@
         Solo si se usa el form-v2 -- puede mostrarse pero por visualizarlo en oculto
         <input th:if="${product.picture != null}" type="hidden" th:field="*{picture}" />
         -->
-        <input th:if="${product.picture != null}" type="hidden" th:field="*{picture}" />
+        <!--<input th:if="${product.picture != null}" type="hidden" th:field="*{picture}" />-->
 
         <div><label for="name">Name</label>
             <div><input type="text" th:field="*{name}"></div>
