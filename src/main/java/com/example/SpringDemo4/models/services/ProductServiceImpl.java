@@ -1,5 +1,7 @@
 package com.example.SpringDemo4.models.services;
 
+import com.example.SpringDemo4.models.dao.CategoriesDao;
+import com.example.SpringDemo4.models.documents.Category;
 import com.example.SpringDemo4.models.documents.Product;
 import com.example.SpringDemo4.models.dao.ProductDao;
 import lombok.Data;
@@ -12,6 +14,7 @@ import reactor.core.publisher.Mono;
 public class ProductServiceImpl implements ProductService {
 
     private final ProductDao productDao;
+    private final CategoriesDao categoriesDao;
 
     @Override
     public Flux<Product> findAll() {
@@ -47,5 +50,20 @@ public class ProductServiceImpl implements ProductService {
     @Override
     public Mono<Void> delete(Product product) {
         return productDao.delete(product);
+    }
+
+    @Override
+    public Flux<Category> findAllCategories() {
+        return categoriesDao.findAll();
+    }
+
+    @Override
+    public Mono<Category> findByIdCategories(String id) {
+        return categoriesDao.findById(id);
+    }
+
+    @Override
+    public Mono<Category> saveCategories(Category category) {
+        return categoriesDao.save(category);
     }
 }

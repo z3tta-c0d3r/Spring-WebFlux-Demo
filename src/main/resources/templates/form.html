@@ -8,10 +8,16 @@
 <h1 th:text="${title}"></h1>
 <div>
     <a th:href="@{/list}">back</a>
-    <form th:action="@{/form}" method="post" th:object="${product}">
+    <form th:action="@{/form}" method="post" th:object="${product}" enctype="multipart/form-data">
 
-        Without session of spring @SessionAttributes("product") // other case with return Mono directly form-v2
+        <!--// Without session of spring @SessionAttributes("product")
+        // other case with return Mono directly form-v2 -->
         <input th:if="${product.id != null}" type="hidden" th:field="*{id}" />
+        <!--
+        Solo si se usa el form-v2 -- puede mostrarse pero por visualizarlo en oculto
+        <input th:if="${product.picture != null}" type="hidden" th:field="*{picture}" />
+        -->
+        <!--<input th:if="${product.picture != null}" type="hidden" th:field="*{picture}" />-->
 
         <div><label for="name">Name</label>
             <div><input type="text" th:field="*{name}"></div>
@@ -23,6 +29,18 @@
         </div>
         <div><label for="createAt">Date</label>
             <div><input type="date" th:field="*{createAt}"></div>
+        </div>
+        <div><label for="category.id">Categories</label>
+            <div>
+                <select th:field="*{category.id}">
+                    <option value = "">-- Select --</option>
+                    <option th:each="category: ${categories}" th:value="${category.id}" th:text="${category.name}"></option>
+                </select>
+            </div>
+            <small th:if="${#fields.hasErrors('category.id')}" th:errors="*{category.name}"></small>
+        </div>
+        <div><label for="file">Picture</label>
+            <div><input type="file" name="file"></div>
         </div>
         <div>
             <div><input type="submit" th:value="${button}"></div>

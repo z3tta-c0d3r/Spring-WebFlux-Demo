@@ -1,9 +1,16 @@
 package com.example.SpringDemo4.controllers;
 
+import com.example.SpringDemo4.models.documents.Category;
 import com.example.SpringDemo4.models.documents.Product;
 import com.example.SpringDemo4.models.services.ProductService;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.UrlResource;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseEntity;
+import org.springframework.http.codec.multipart.FilePart;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -14,8 +21,13 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import javax.validation.Valid;
+import java.io.File;
+import java.net.MalformedURLException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.Duration;
 import java.util.Date;
+import java.util.UUID;
 
 @Controller
 @SessionAttributes("product")
@@ -24,6 +36,14 @@ import java.util.Date;
 public class ProductController {
 
     private final ProductService service;
+
+    @Value("${config.upload.path}")
+    private String pathFile;
+
+    @ModelAttribute("categories")
+    public Flux<Category> categories() {
+        return service.findAllCategories();
+    }
 
     /**
      * List normal elements
@@ -53,24 +73,86 @@ public class ProductController {
     }
 
     @PostMapping("/form")
-    public Mono<String> saveProduct(@Valid @ModelAttribute("product") Product product, BindingResult result, SessionStatus status, Model model) {
+    public Mono<String> saveProduct(@Valid Product product, BindingResult result,
+                                    @RequestPart(name="file") FilePart file, Model model, SessionStatus status) {
 
         if (result.hasErrors()) {
             model.addAttribute("title", "Errors of product");
             model.addAttribute("button","Save");
             return Mono.just("form");
         } else {
+            status.setComplete();
 
             if(product.getCreateAt() == null) {
                 product.setCreateAt(new Date());
             }
 
-            status.setComplete();
-            return service.save(product).doOnNext(p -> {
-                log.info("Product save: " + product.getName() + " Id: " + product.getId());
+            // Fase 2
+            //if(product.getCreateAt() == null) {
+            //    product.setCreateAt(new Date());
+            //}
+
+            Mono<Category> categoria = service.findByIdCategories(product.getCategory().getId());
+
+            Path pathToFile = Paths.get(file.filename());
+            log.info("PATHFILE1: " + pathToFile.toAbsolutePath());
+
+            return categoria.flatMap(c -> {
+                if(!file.filename().isEmpty()) {
+                    product.setPicture(file.filename()
+                            .replace(" ","")
+                            .replace(":","")
+                            .replace("\\",""));
+                }
+
+               product.setCategory(c);
+               return service.save(product);
+            }).doOnNext(p -> {
+                    log.info("Product save: " + product.getName() + " Id: " + product.getId());
+            }).flatMap(p -> {
+                if(!file.filename().isEmpty()) {
+                    log.info("PATHFILE2: " + pathFile + p.getPicture());
+                    return file.transferTo(new File(pathFile + p.getPicture()));
+                }
+                return Mono.empty();
             }).thenReturn("redirect:/list?success=save+product+with+success");
-            //.then(Mono.just("redirect:/list"));
         }
+
+            // Fase 2
+            //return service.save(product).doOnNext(p -> {
+            //    log.info("Product save: " + product.getName() + " Id: " + product.getId());
+            //}).thenReturn("redirect:/list?success=save+product+with+success");
+
+            // Fase 1
+            //.then(Mono.just("redirect:/list"));
+
+    }
+
+    @GetMapping("/uploads/img/{namePicture:.+}")
+    public Mono<ResponseEntity<Resource>> seePicture(@PathVariable String namePicture) throws MalformedURLException {
+        Path path = Paths.get(pathFile).resolve(namePicture).toAbsolutePath();
+
+        log.info("PATH3: " + path.toString());
+        Resource image = new UrlResource(path.toUri());
+
+        return Mono.just(
+            ResponseEntity.ok().header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + image.getFilename() + "\"")
+                .body(image)
+        );
+    }
+
+    @GetMapping("/see/{id}")
+    public Mono<String> seeProduct(Model model, @PathVariable String id) {
+        return service.findById(id).doOnNext(product -> {
+            model.addAttribute("product",product);
+            model.addAttribute("title","Detail product");
+        }).switchIfEmpty(Mono.just(new Product()))
+                .flatMap(p -> {
+                    if (p.getId() == null) {
+                        return Mono.error(new InterruptedException("Don´t exist the product"));
+                    }
+                    return Mono.just(p);
+                }).then(Mono.just("see")).onErrorResume(ex->Mono.just("redirect:/list?error=not+exist+the+product"));
     }
 
     @GetMapping("/form/{id}")
