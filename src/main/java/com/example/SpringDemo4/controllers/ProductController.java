@@ -5,6 +5,8 @@ import com.example.SpringDemo4.models.documents.Product;
 import com.example.SpringDemo4.models.services.ProductService;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.codec.multipart.FilePart;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -15,8 +17,12 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import javax.validation.Valid;
+import java.io.File;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.Duration;
 import java.util.Date;
+import java.util.UUID;
 
 @Controller
 @SessionAttributes("product")
@@ -25,6 +31,9 @@ import java.util.Date;
 public class ProductController {
 
     private final ProductService service;
+
+    @Value("${config.upload.path}")
+    private String pathFile;
 
     @ModelAttribute("categories")
     public Flux<Category> categories() {
@@ -59,7 +68,8 @@ public class ProductController {
     }
 
     @PostMapping("/form")
-    public Mono<String> saveProduct(@Valid Product product, BindingResult result, SessionStatus status, Model model) {
+    public Mono<String> saveProduct(@Valid Product product, BindingResult result,
+                                    @RequestPart(name="file") FilePart file, Model model, SessionStatus status) {
 
         if (result.hasErrors()) {
             model.addAttribute("title", "Errors of product");
@@ -71,6 +81,7 @@ public class ProductController {
             if(product.getCreateAt() == null) {
                 product.setCreateAt(new Date());
             }
+
             // Fase 2
             //if(product.getCreateAt() == null) {
             //    product.setCreateAt(new Date());
@@ -78,11 +89,27 @@ public class ProductController {
 
             Mono<Category> categoria = service.findByIdCategories(product.getCategory().getId());
 
+            Path pathToFile = Paths.get(file.filename());
+            log.info("PATHFILE1: " + pathToFile.toAbsolutePath());
+
             return categoria.flatMap(c -> {
+                if(!file.filename().isEmpty()) {
+                    product.setPicture(UUID.randomUUID().toString() + file.filename()
+                            .replace(" ","")
+                            .replace(":","")
+                            .replace("\\",""));
+                }
+
                product.setCategory(c);
                return service.save(product);
             }).doOnNext(p -> {
                     log.info("Product save: " + product.getName() + " Id: " + product.getId());
+            }).flatMap(p -> {
+                if(!file.filename().isEmpty()) {
+                    log.info("PATHFILE2: " + pathFile + p.getPicture());
+                    return file.transferTo(new File(pathFile + p.getPicture()));
+                }
+                return Mono.empty();
             }).thenReturn("redirect:/list?success=save+product+with+success");
         }
 

@@ -33,6 +33,8 @@ public class Product {
     @NotNull
     private Category category;
 
+    private String picture;
+
     @DateTimeFormat(pattern = "yyyy-MM-dd")
     private Date createAt;
 
