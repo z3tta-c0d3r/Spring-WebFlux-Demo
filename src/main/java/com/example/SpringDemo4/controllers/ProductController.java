@@ -6,6 +6,10 @@ import com.example.SpringDemo4.models.services.ProductService;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.UrlResource;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseEntity;
 import org.springframework.http.codec.multipart.FilePart;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -18,6 +22,7 @@ import reactor.core.publisher.Mono;
 
 import javax.validation.Valid;
 import java.io.File;
+import java.net.MalformedURLException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Duration;
@@ -94,7 +99,7 @@ public class ProductController {
 
             return categoria.flatMap(c -> {
                 if(!file.filename().isEmpty()) {
-                    product.setPicture(UUID.randomUUID().toString() + file.filename()
+                    product.setPicture(file.filename()
                             .replace(" ","")
                             .replace(":","")
                             .replace("\\",""));
@@ -121,6 +126,33 @@ public class ProductController {
             // Fase 1
             //.then(Mono.just("redirect:/list"));
 
+    }
+
+    @GetMapping("/uploads/img/{namePicture:.+}")
+    public Mono<ResponseEntity<Resource>> seePicture(@PathVariable String namePicture) throws MalformedURLException {
+        Path path = Paths.get(pathFile).resolve(namePicture).toAbsolutePath();
+
+        log.info("PATH3: " + path.toString());
+        Resource image = new UrlResource(path.toUri());
+
+        return Mono.just(
+            ResponseEntity.ok().header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + image.getFilename() + "\"")
+                .body(image)
+        );
+    }
+
+    @GetMapping("/see/{id}")
+    public Mono<String> seeProduct(Model model, @PathVariable String id) {
+        return service.findById(id).doOnNext(product -> {
+            model.addAttribute("product",product);
+            model.addAttribute("title","Detail product");
+        }).switchIfEmpty(Mono.just(new Product()))
+                .flatMap(p -> {
+                    if (p.getId() == null) {
+                        return Mono.error(new InterruptedException("Don´t exist the product"));
+                    }
+                    return Mono.just(p);
+                }).then(Mono.just("see")).onErrorResume(ex->Mono.just("redirect:/list?error=not+exist+the+product"));
     }
 
     @GetMapping("/form/{id}")
